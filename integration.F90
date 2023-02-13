@@ -1266,14 +1266,15 @@ contains
     real(kind=dp)             :: ord_array(size(array))
 
     if (n .eq. 0) then
-
+      !Special case size(array) = 2, use simple trapezium method.
       u = sum(array)*0.5_dp
-
+    else if (n .eq. -1) then
+      !Exception size(array) = 1, do not integrate.
+      u = 1.0_dp!array(1)
     else
-
+      !size(array) = 3, 5, 9, ... proceed normally.
       ord_array = organize_data(array, n)
       u = extrapolation(ord_array, n)
-
     endif
 
   contains
@@ -1434,7 +1435,7 @@ contains
       u = sum(array)*0.5_dp
     else if (n .eq. -1) then
       !Exception size(array) = 1, do not integrate.
-      u = array(1)
+      u = cmplx(0.0_dp, 0.0_dp, dp)!array(1)
     else
       !size(array) = 3, 5, 9, ... proceed normally.
       ord_array = organize_data(array, n)

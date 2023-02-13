@@ -1,0 +1,5 @@
+*.exe
+*.o
+*.out
+*.mod
+testbed.F90

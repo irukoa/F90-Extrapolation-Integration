@@ -49,18 +49,22 @@ module extrapolation_integration
   end interface integral_extrapolation
 
   interface shrink_array
+    module procedure shrink_rarray1
     module procedure shrink_rarray2
     module procedure shrink_rarray3
     module procedure shrink_rarray4
+    module procedure shrink_carray1
     module procedure shrink_carray2
     module procedure shrink_carray3
     module procedure shrink_carray4
   end interface shrink_array
 
   interface expand_array
+    module procedure expand_rarray1
     module procedure expand_rarray2
     module procedure expand_rarray3
     module procedure expand_rarray4
+    module procedure expand_carray1
     module procedure expand_carray2
     module procedure expand_carray3
     module procedure expand_carray4
@@ -273,7 +277,7 @@ contains
       return
     endif
 
-    if (product(sizes) .ne. size(array)) then
+    if (product(sizes) .ne. size(array(:, 1))) then
       info = -1 !Error.
       return
     endif
@@ -324,10 +328,12 @@ contains
           (abs(real(n3, dp) - nr3) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))* &
-                             (int_bounds(4) - int_bounds(3))* &
-                             (int_bounds(6) - int_bounds(5))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
+                                  (int_bounds(4) - int_bounds(3))* &
+                                  (int_bounds(6) - int_bounds(5))) &
+                   /size(array(:, i))
+        enddo
         !Not suitable, returning the rectangle method approximation.
         return
 
@@ -380,9 +386,11 @@ contains
           (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))* &
-                             (int_bounds(4) - int_bounds(3))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
+                                  (int_bounds(4) - int_bounds(3))) &
+                   /size(array(:, i))
+        enddo
         !Not suitable, returning the rectangle method approximation.
         return
 
@@ -421,8 +429,10 @@ contains
       if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))) &
+                   /size(array(:, i))
+        enddo
         !Not suitable, returning the rectangle method approximation.
         return
 
@@ -650,7 +660,7 @@ contains
       return
     endif
 
-    if (product(sizes) .ne. size(array)) then
+    if (product(sizes) .ne. size(array(:, 1))) then
       info = -1 !Error.
       return
     endif
@@ -701,10 +711,12 @@ contains
           (abs(real(n3, dp) - nr3) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))* &
-                             (int_bounds(4) - int_bounds(3))* &
-                             (int_bounds(6) - int_bounds(5))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
+                                  (int_bounds(4) - int_bounds(3))* &
+                                  (int_bounds(6) - int_bounds(5))) &
+                   /size(array(:, i))
+        enddo
         !Not suitable, returning the rectangle method approximation.
 
         return
@@ -758,9 +770,11 @@ contains
           (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))* &
-                             (int_bounds(4) - int_bounds(3))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
+                                  (int_bounds(4) - int_bounds(3))) &
+                   /size(array(:, i))
+        enddo
         return
 
       else
@@ -798,8 +812,10 @@ contains
       if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))) &
+                   /size(array(:, i))
+        enddo
         return
 
       else
@@ -1026,7 +1042,7 @@ contains
       return
     endif
 
-    if (product(sizes) .ne. size(array)) then
+    if (product(sizes) .ne. size(array(:, 1))) then
       info = -1 !Error.
       return
     endif
@@ -1077,10 +1093,12 @@ contains
           (abs(real(n3, dp) - nr3) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))* &
-                             (int_bounds(4) - int_bounds(3))* &
-                             (int_bounds(6) - int_bounds(5))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
+                                  (int_bounds(4) - int_bounds(3))* &
+                                  (int_bounds(6) - int_bounds(5))) &
+                   /size(array(:, i))
+        enddo
         !Not suitable, returning the rectangle method approximation.
         return
 
@@ -1133,9 +1151,11 @@ contains
           (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))* &
-                             (int_bounds(4) - int_bounds(3))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
+                                  (int_bounds(4) - int_bounds(3))) &
+                   /size(array(:, i))
+        enddo
         !Not suitable, returning the rectangle method approximation.
         return
 
@@ -1174,8 +1194,10 @@ contains
       if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp)) then
 
         info = 0
-        result = sum(array)*((int_bounds(2) - int_bounds(1))) &
-                 /size(array)
+        do i = 1, size(array(1, :))
+          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))) &
+                   /size(array(:, i))
+        enddo
         !Not suitable, returning the rectangle method approximation.
         return
 
@@ -1209,7 +1231,7 @@ contains
     !on input.
 
     real(kind=dp), intent(in) :: array(:, :, :)
-    integer, intent(in) :: n1, n2, n3
+    integer, intent(in)       :: n1, n2, n3
 
     real(kind=dp)             :: u
     real(kind=dp)             :: aux(size(array(:, 1, 1)), size(array(1, :, 1)))
@@ -1236,7 +1258,7 @@ contains
     !on input.
 
     real(kind=dp), intent(in) :: array(:, :)
-    integer, intent(in) :: n1, n2
+    integer, intent(in)       :: n1, n2
 
     real(kind=dp)             :: u
     real(kind=dp)             :: aux(size(array(:, 1)))
@@ -1260,7 +1282,7 @@ contains
     !on input.
 
     real(kind=dp), intent(in) :: array(:)
-    integer, intent(in) :: n
+    integer, intent(in)       :: n
 
     real(kind=dp)             :: u
     real(kind=dp)             :: ord_array(size(array))
@@ -1374,7 +1396,7 @@ contains
     !on input.
 
     complex(kind=dp), intent(in) :: array(:, :, :)
-    integer, intent(in) :: n1, n2, n3
+    integer, intent(in)          :: n1, n2, n3
 
     complex(kind=dp)             :: u
     complex(kind=dp)             :: aux(size(array(:, 1, 1)), size(array(1, :, 1)))
@@ -1401,7 +1423,7 @@ contains
     !on input.
 
     complex(kind=dp), intent(in) :: array(:, :)
-    integer, intent(in) :: n1, n2
+    integer, intent(in)          :: n1, n2
 
     complex(kind=dp)             :: u
     complex(kind=dp)             :: aux(size(array(:, 1)))
@@ -1425,7 +1447,7 @@ contains
     !on input.
 
     complex(kind=dp), intent(in) :: array(:)
-    integer, intent(in) :: n
+    integer, intent(in)          :: n
 
     complex(kind=dp)             :: u
     complex(kind=dp)             :: ord_array(size(array))
@@ -1528,6 +1550,35 @@ contains
 
   end function nscalar1_integrate_complex
 
+  subroutine shrink_rarray1(array, shrink, info)
+
+    !Pass from dim = 1 array layout to memory layout.
+
+    real(kind=dp), intent(in)  :: array(:)
+
+    real(kind=dp), intent(out) :: shrink(:)
+    integer, intent(out)       :: info
+
+    integer                    :: a1, l
+
+    shrink = 0.0_dp
+    info = 0
+
+    if (size(shrink) .ne. size(array)) then
+      info = -1 !Error.
+      return
+    endif
+
+    l = 1
+    do a1 = lbound(array, 1), ubound(array, 1)
+      shrink(l) = array(a1)
+      l = l + 1
+    enddo
+
+    info = 1 !Sucess.
+
+  end subroutine shrink_rarray1
+
   subroutine shrink_rarray2(array, shrink, info)
 
     !Pass from dim = 2 array layout to memory layout.
@@ -1535,7 +1586,7 @@ contains
     real(kind=dp), intent(in)  :: array(:, :)
 
     real(kind=dp), intent(out) :: shrink(:)
-    integer, intent(out) :: info
+    integer, intent(out)       :: info
 
     integer                    :: a1, a2, l
 
@@ -1566,7 +1617,7 @@ contains
     real(kind=dp), intent(in)  :: array(:, :, :)
 
     real(kind=dp), intent(out) :: shrink(:)
-    integer, intent(out) :: info
+    integer, intent(out)       :: info
 
     integer                    :: a1, a2, a3, l
 
@@ -1599,7 +1650,7 @@ contains
     real(kind=dp), intent(in)  :: array(:, :, :, :)
 
     real(kind=dp), intent(out) :: shrink(:)
-    integer, intent(out) :: info
+    integer, intent(out)       :: info
 
     integer                    :: a1, a2, a3, a4, l
 
@@ -1627,6 +1678,35 @@ contains
 
   end subroutine shrink_rarray4
 
+  subroutine shrink_carray1(array, shrink, info)
+
+    !Pass from dim = 1 array layout to memory layout.
+
+    complex(kind=dp), intent(in)  :: array(:)
+
+    complex(kind=dp), intent(out) :: shrink(:)
+    integer, intent(out)          :: info
+
+    integer                       :: a1, l
+
+    shrink = 0.0_dp
+    info = 0
+
+    if (size(shrink) .ne. size(array)) then
+      info = -1 !Error.
+      return
+    endif
+
+    l = 1
+    do a1 = lbound(array, 1), ubound(array, 1)
+      shrink(l) = array(a1)
+      l = l + 1
+    enddo
+
+    info = 1 !Sucess.
+
+  end subroutine shrink_carray1
+
   subroutine shrink_carray2(array, shrink, info)
 
     !Pass from dim = 2 array layout to memory layout.
@@ -1634,9 +1714,9 @@ contains
     complex(kind=dp), intent(in)  :: array(:, :)
 
     complex(kind=dp), intent(out) :: shrink(:)
-    integer, intent(out) :: info
+    integer, intent(out)          :: info
 
-    integer                    :: a1, a2, l
+    integer                       :: a1, a2, l
 
     shrink = 0.0_dp
     info = 0
@@ -1665,9 +1745,9 @@ contains
     complex(kind=dp), intent(in)  :: array(:, :, :)
 
     complex(kind=dp), intent(out) :: shrink(:)
-    integer, intent(out) :: info
+    integer, intent(out)          :: info
 
-    integer                    :: a1, a2, a3, l
+    integer                       :: a1, a2, a3, l
 
     shrink = 0.0_dp
     info = 0
@@ -1698,9 +1778,9 @@ contains
     complex(kind=dp), intent(in)  :: array(:, :, :, :)
 
     complex(kind=dp), intent(out) :: shrink(:)
-    integer, intent(out) :: info
+    integer, intent(out)          :: info
 
-    integer                    :: a1, a2, a3, a4, l
+    integer                       :: a1, a2, a3, a4, l
 
     shrink = 0.0_dp
     info = 0
@@ -1726,14 +1806,43 @@ contains
 
   end subroutine shrink_carray4
 
+  subroutine expand_rarray1(array, expand, info)
+
+    !Pass from memory layout to dim = 1 array layout.
+
+    real(kind=dp), intent(in)  :: array(:)
+
+    real(kind=dp), intent(out) :: expand(:)
+    integer, intent(out)       :: info
+
+    integer                    :: a1, l
+
+    expand = 0.0_dp
+    info = 0
+
+    if (size(expand) .ne. size(array)) then
+      info = -1 !Error.
+      return
+    endif
+
+    l = 1
+    do a1 = lbound(expand, 1), ubound(expand, 1)
+      expand(a1) = array(l)
+      l = l + 1
+    enddo
+
+    info = 1 !Sucess.
+
+  end subroutine expand_rarray1
+
   subroutine expand_rarray2(array, expand, info)
 
     !Pass from memory layout to dim = 2 array layout.
 
-    real(kind=dp), intent(in) :: array(:)
+    real(kind=dp), intent(in)  :: array(:)
 
     real(kind=dp), intent(out) :: expand(:, :)
-    integer, intent(out) :: info
+    integer, intent(out)       :: info
 
     integer                    :: a1, a2, l
 
@@ -1764,7 +1873,7 @@ contains
     real(kind=dp), intent(in)  :: array(:)
 
     real(kind=dp), intent(out) :: expand(:, :, :)
-    integer, intent(out) :: info
+    integer, intent(out)       :: info
 
     integer                    :: a1, a2, a3, l
 
@@ -1797,7 +1906,7 @@ contains
     real(kind=dp), intent(in)  :: array(:)
 
     real(kind=dp), intent(out) :: expand(:, :, :, :)
-    integer, intent(out) :: info
+    integer, intent(out)       :: info
 
     integer                    :: a1, a2, a3, a4, l
 
@@ -1825,14 +1934,43 @@ contains
 
   end subroutine expand_rarray4
 
+  subroutine expand_carray1(array, expand, info)
+
+    !Pass from memory layout to dim = 1 array layout.
+
+    complex(kind=dp), intent(in)  :: array(:)
+
+    complex(kind=dp), intent(out) :: expand(:)
+    integer, intent(out)          :: info
+
+    integer                       :: a1, l
+
+    expand = 0.0_dp
+    info = 0
+
+    if (size(expand) .ne. size(array)) then
+      info = -1 !Error.
+      return
+    endif
+
+    l = 1
+    do a1 = lbound(expand, 1), ubound(expand, 1)
+      expand(a1) = array(l)
+      l = l + 1
+    enddo
+
+    info = 1 !Sucess.
+
+  end subroutine expand_carray1
+
   subroutine expand_carray2(array, expand, info)
 
     !Pass from memory layout to dim = 2 array layout.
 
-    complex(kind=dp), intent(in) ::  array(:)
+    complex(kind=dp), intent(in)  ::  array(:)
 
     complex(kind=dp), intent(out) :: expand(:, :)
-    integer, intent(out) :: info
+    integer, intent(out)          :: info
 
     integer                       :: a1, a2, l
 
@@ -1863,7 +2001,7 @@ contains
     complex(kind=dp), intent(in)  :: array(:)
 
     complex(kind=dp), intent(out) :: expand(:, :, :)
-    integer, intent(out) :: info
+    integer, intent(out)          :: info
 
     integer                       :: a1, a2, a3, l
 
@@ -1896,7 +2034,7 @@ contains
     complex(kind=dp), intent(in)  :: array(:)
 
     complex(kind=dp), intent(out) :: expand(:, :, :, :)
-    integer, intent(out) :: info
+    integer, intent(out)          :: info
 
     integer                       :: a1, a2, a3, a4, l
 

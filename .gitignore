@@ -2,3 +2,9 @@
 *.o
 *.out
 *.mod
+doc/*.aux
+doc/*.bbl
+doc/*.blg
+doc/*.log
+doc/*.out
+doc/*.gz

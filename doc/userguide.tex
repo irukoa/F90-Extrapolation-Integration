@@ -21,24 +21,187 @@
   citecolor=blue
 ]{hyperref}
 
-\title{User Guide: F90-Extrapolation-Integration}
+\title{User Guide: {\tt F90-Extrapolation-Integration}}
 
 \author{{\'A}lvaro R. Puente-Uriona}
 
-\date{\today}
+%\date{\today}
 
 \begin{document}
 \maketitle
 \section{Introduction}
+{\tt F90-Extrapolation-Integration} is a module written in {\tt FORTRAN90}, which specializes in computing integrals of the type
+\begin{equation}\label{eq:gen_integral}
+I(\alpha) = \int_{\bm{a}}^{\bm{b}}d^d \bm{x}\; f\left(\bm{x};\alpha \right),
+\end{equation}
+for $d = 1, 2, 3$, where the $d$-dimensional variable $\bm{x}$ is defined over $\mathbb{R}^d$ or $\mathbb{C}^d$ and within the $d$-dimensional bounds $\bm{a}$, $\bm{b}$. The general index $\alpha$ denotes all other possible dependences of $f$ other than $\bm{x}$. Integrals as Eq.~\eqref{eq:gen_integral} are a common occurrence in scientific computing and the {\tt F90-Extrapolation-Integration} module specializes in providing an adaptive method, based on extrapolation over the \textit{trapezium method}, described in Ref. \cite{puente-uriona2023}, to obtain increasingly accurate values for $I(\alpha)$, dependent only in the number of sample points in which $f$ is evaluated.
 
-\section{Definitions and Methodology}
+The project is hosted at \url{https://github.com/irukoa/F90-Extrapolation-Integration}.
+\section{Definitions}
+\begin{itemize}
+\item We call Eq. \eqref{eq:gen_integral} a \textit{vector} integral.
+\item A \textit{scalar} integral is an special case of Eq. \eqref{eq:gen_integral}, in which $I$ and $f$ do not depend on any parameter $\alpha$.
+\item An array {\tt m(:)} in \textit{memory layout} is a 1-dimensional array, defined from a $d$-dimensional array with arbitrary bounds {\tt a(:, :, ..., :)}, which we call array in \textit{arbitary layout}. {\tt m} has the form,
+\begin{verbatim}
+real(kind=dp)    :: m(1:size(a))
+complex(kind=dp) :: m(1:size(a))
+\end{verbatim}
+where the lower bound is always 1 and the upper bound {\tt size(a)}. The mapping between {\tt a} and {\tt m} is done \textit{via}
+\begin{verbatim}
+count = 1
+do i1 = lbound(a, 1), ubound(a, 1)
+  do i2 = lbound(a, 2), ubound(a, 2)
+   .
+    .
+     .
+      do id = lbound(a, d), ubound(a, d)
+        m(count) = a(i1, i2, ..., id) !From arbitrary to memory layout.
+        a(i1, i2, ..., id) = m(count) !From memory to arbitrary layout.
+        count = count + 1
+      enddo
+     .
+    .
+   .
+  enddo
+enddo
+\end{verbatim}
+\item A \textit{discretization of dimension $j$} corresponds to the partition of the variable $x_j$ in Eq. \eqref{eq:gen_integral} within the $[a_j, b_j]$ range, given by
+\begin{equation}\label{eq:discretization}
+x_j\left\lbrace i_j\right\rbrace = a_j + \left(i_j - 1 \right)w_j,\quad i_j\in [1, N_j],\; w_j = \frac{b_j - a_j}{N_j - 1}.
+\end{equation}
+\item A \textit{discretization point in memory layout} is an index {\tt count} representing a $d$-dimensional point $\left(x_1\left\lbrace i_1\right\rbrace, \cdots, x_d\left\lbrace i_d\right\rbrace \right)$ \textit{via}
+\begin{verbatim}
+count = 1
+do i1 = 1, N1
+  do i2 = 1, N2
+   .
+    .
+     .
+      do id = 1, Nd
+        !{i1, i2, ..., id} are identified with count.
+        count = count + 1
+      enddo
+     .
+    .
+   .
+  enddo
+enddo
+\end{verbatim}
+\end{itemize}
 
 \section{Module Overview}
 
 \subsection{Integration-Extrapolation Routines}
+{\tt integral\char`_extrapolation} is a family of routines, which is called
+\begin{verbatim}
+call integral_extrapolation(array, sizes, int_bounds, result, info)
+\end{verbatim}
+with
+\begin{verbatim}
+real/complex(kind=dp), intent(in)  :: array(:), int_bounds(:)
+integer,               intent(in)  :: sizes(:)
+    
+real/complex(kind=dp), intent(out) :: result
+integer,               intent(out) :: info
+\end{verbatim}
+for scalar integrals. The input/output variables are
+\begin{itemize}
+\item {\tt array(:)} is a complex or real {\tt size(array) = prod(sizes)} array in memory layout, where each index represents the discretization point $\left(x_1\left\lbrace i_1\right\rbrace, \cdots, x_d\left\lbrace i_d\right\rbrace \right)$ in memory layout and the array contains the data of the integrand $f\left(x_1\left\lbrace i_1\right\rbrace, \cdots, x_d\left\lbrace i_d\right\rbrace \right)$ evaluated in each discretization point.
+\item {\tt sizes(:)} is an integer {\tt size = 1}, {\tt size = 2} or {\tt size = 3} array containing the number of discretization points in each dimension ($N_j$ in Eq. \eqref{eq:discretization} for $j = 1, 2, 3$). The routine employs the method to compute a $1$-dimensional, $2$-dimensional or $3$-dimensional integral depending on {\tt size(sizes)}. To use extrapolation, all of the integers in the array must be expressible as $2^n + 1$ for some $n\in 0, 1,\cdots $. The only exception is {\tt sizes(j) = 1} for some $j = 1, 2, 3$. In that case, the integral in dimension $j$ is set to be $b_j - a_j$. In all the cases where {\tt sizes(j)} is not 1 and can not be expressed as $2^n + 1$, the \textit{rectangle method} \cite{puente-uriona2023} is used for the integration.
+\item {\tt int\char`_bounds(:)} is a {\tt size = 2*size(sizes)} real or complex array (not necesarily {\tt kind = array}) which contains the integration bounds of Eq. \eqref{eq:gen_integral} sorted in ascending dimension containing the lower bound and the upper bound respectively. For example, for a $d=2$ integral with $\bm{a} = (0, 1)$, $\bm{b} = (2, 4)$,
+\begin{verbatim}
+int_bounds = (/0.0_dp, 2.0_dp, 1.0_dp, 4.0_dp/).
+\end{verbatim}
+\item {\tt result} is a {\tt kind = array} complex or real number containing the scalar integral $I$ in the cases {\tt info = 0, 1} and is initialized to 0 in the case {\tt info = -1}.
+\item {\tt info} is an integer, reporting the calculation status:
+\begin{itemize}
+\item {\tt info = 1}: Calculation successful and {\tt result} contains the integral computed using extrapolation methods.
+\item {\tt info = 0}: Calculation successful and {\tt result} contains the integral computed using the rectangle method.
+\item {\tt info = -1}: Error. Returning {\tt result = 0}.
+\end{itemize}
+\end{itemize}
+
+For vector integrals the input/output variables are slightly different,
+\begin{verbatim}
+real/complex(kind=dp), intent(in)  :: array(:, :), int_bounds(:)
+integer,               intent(in)  :: sizes(:)
+    
+real/complex(kind=dp), intent(out) :: result(:)
+integer,               intent(out) :: info
+\end{verbatim}
+Where {\tt sizes(:)}, {\tt int\char`_bounds(:)} and {\tt info} are the same as for a scalar integral. However,
+\begin{itemize}
+\item {\tt array(:, :)} contains:
+\begin{itemize}
+\item In the first dimension, the same information as for scalar integrals.
+\item In the second dimension, an index representing $\alpha$ in Eq. \eqref{eq:gen_integral}, in memory layout, which will not be integrated over.
+\end{itemize}
+\item {\tt result(:)} inherits the second dimension of {\tt array(:, :)}, thus containing an index representing $\alpha$ in memory layout.
+\end{itemize}
 \subsection{Shrink Array Routines}
+{\tt shrink\char`_array} is a family of routines, used to pass arrays from arbitrary layout to memory layout, which is called
+\begin{verbatim}
+call shrink_array(array, shrink, info)
+\end{verbatim}
+with the following possibilities for {\tt array},
+\begin{verbatim}
+real/complex(kind=dp), intent(in)  :: array(:)
+real/complex(kind=dp), intent(in)  :: array(:, :)
+real/complex(kind=dp), intent(in)  :: array(:, :, :)
+real/complex(kind=dp), intent(in)  :: array(:, :, :, :)
+\end{verbatim}
+and 
+\begin{verbatim}
+real/complex(kind=dp), intent(out) :: shrink(:)
+integer,               intent(out) :: info
+\end{verbatim}
+The input/output variables are
+\begin{itemize}
+\item {\tt array(:), array(:, :), array(:, :, :), array(:, :, :, :)} is a complex or real array with arbitrary bounds in each dimension.
+\item {\tt shrink(:)} is a {\tt kind = array} complex or real array, which contains {\tt array} in memory layout.
+\item {\tt info} is an integer, reporting the calculation status:
+\begin{itemize}
+\item {\tt info = 1}: Calculation successful and {\tt shrink} contains {\tt array} in memory layout.
+\item {\tt info = -1}: Error. Returning {\tt shrink = 0}.
+\end{itemize}
+\end{itemize}
 \subsection{Expand Array Routines}
-\section{Frequently Asked Questions}
+{\tt expand\char`_array} is a family of routines, used to pass arrays from memory layout to arbitrary layout, which is called
+\begin{verbatim}
+call expand_array(array, expand, info)
+\end{verbatim}
+with 
+\begin{verbatim}
+real/complex(kind=dp), intent(in)  :: array(:)
+integer,               intent(out) :: info
+\end{verbatim}
+and the following possibilities for {\tt expand},
+\begin{verbatim}
+real/complex(kind=dp), intent(out) :: expand(:)
+real/complex(kind=dp), intent(out) :: expand(:, :)
+real/complex(kind=dp), intent(out) :: expand(:, :, :)
+real/complex(kind=dp), intent(out) :: expand(:, :, :, :)
+\end{verbatim}
+
+The input/output variables are
+\begin{itemize}
+\item {\tt array(:)} is a complex or real array in memory layout.
+\item {\tt expand(:), expand(:, :), expand(:, :, :), expand(:, :, :, :)} is \\ {\tt kind = array} a complex or real array with arbitrary bounds in each dimension into which {\tt array(:)} is to be casted.
+\item {\tt info} is an integer, reporting the calculation status:
+\begin{itemize}
+\item {\tt info = 1}: Calculation successful and {\tt expand} contains {\tt array} in arbitrary layout.
+\item {\tt info = -1}: Error. Returning {\tt expand = 0}.
+\end{itemize}
+\end{itemize}
+\section{Example}
+We provide an example in the file {\tt example.F90}. The objective is to calculate
+\begin{equation}
+\begin{split}
+I(v) = & \int_{0}^{2}dx\int_{0}^{2}dy\int_{0}^{2}dz \left[\cos(x)e^{\sin(vx)}+i \cos(x)e^{\sin(2vx)}\right]\times \\
+&\left[\cos(y)e^{\sin(vy)}+i \cos(y)e^{\sin(2vy)}\right]\left[\cos(z)e^{\sin(vz)}+i \cos(z)e^{\sin(2vz)}\right],
+\end{split}
+\end{equation}
+for $v=-1, 0, 1$. To do this, we consider a set of integers {\tt l1, l2, l3} into which we discretize each dimension and obtain the values of the integrand in each discretization point for the considered $v$-s. After gathering the data, we pass the index related to $v$ to memory layout. The integration is the performed by {\tt integral\char`_extrapolation}. Finally, the program prints $I(-1)$, which is known to be exactly $-0.0481480 +0.352825i$. By default, {\tt l1 = l2 = l3} $= 2^5 +1 = 33$, so the extrapolation method is employed. The user is encouraged to give different values for {\tt l1, l2, l3}, specially some not expressible as $2^n + 1$, such as {\tt l1 = l2 = l3} $=100$. This way, the provided result will be estimated by the rectangle approximation rather than by the extrapolation method.
 \bibliography{bibdata}
 \bibliographystyle{unsrt}
 

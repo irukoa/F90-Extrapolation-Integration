@@ -24,8 +24,8 @@ module extrapolation_integration
   ! ii.b) info =  0: not suitable for extrapolation, returning the rectangle method approximation.
   ! ii.c) info = -1: error.
   !
-  !The routine shrink_array passes an array from array layout* to memory layout and
-  !the routine expand_array passes an array from memory layout to array layout.
+  !The routine shrink_array passes an array from arbitrary layout to memory layout and
+  !the routine expand_array passes an array from memory layout to arbitrary layout.
   !
   !(*) See documentation.
 
@@ -100,15 +100,15 @@ contains
     if (size(sizes) .eq. 3) then
 
       !Approximate to 0.
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
 
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1 !Sucess.
-        return
+      !  result = cmplx(0.0_dp, 0.0_dp, dp)
+      !  info = 1 !Sucess.
+      !  return
 
-      endif
+      !endif
 
       !Calculate n_i = log_2(N_i - 1)
       !Exceptional case: N_i = 1:
@@ -153,7 +153,7 @@ contains
       else
 
         allocate (e3(sizes(1), sizes(2), sizes(3)))
-        !i) Pass from memory to array layout,
+        !i) Pass from memory to arbitrary array,
         call expand_rarray3(array(:), e3(:, :, :), ep)
         !ii) integrate as if the data was scattered from [0, 1]x[0, 1]x[0, 1],
         result = nscalar3_integrate_real(e3(:, :, :), n1, n2, n3)
@@ -168,14 +168,14 @@ contains
 
     elseif (size(sizes) .eq. 2) then
 
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
 
-        result = 0.0_dp
-        info = 1
-        return
+      !  result = 0.0_dp
+      !  info = 1
+      !  return
 
-      endif
+      !endif
 
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
@@ -216,13 +216,13 @@ contains
 
     elseif (size(sizes) .eq. 1) then
 
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
 
-        result = 0.0_dp
-        info = 1
-        return
+      !  result = 0.0_dp
+      !  info = 1
+      !  return
 
-      endif
+      !endif
 
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
@@ -260,15 +260,12 @@ contains
   subroutine vector_integral_extrapolation_real(array, sizes, int_bounds, result, info)
 
     real(kind=dp), intent(in)  :: array(:, :), int_bounds(:)
-    integer, intent(in)  :: sizes(:)
+    integer, intent(in)        :: sizes(:)
 
     real(kind=dp), intent(out) :: result(size(array(1, :)))
-    integer, intent(out) :: info
+    integer, intent(out)       :: info
 
-    integer                    :: n1, n2, n3, i, ep
-    real(kind=dp)              :: nr1, nr2, nr3
-    real(kind=dp), allocatable :: e3(:, :, :, :), &
-                                  e2(:, :, :)
+    integer                    :: i
 
     result = 0.0_dp
 
@@ -282,176 +279,9 @@ contains
       return
     endif
 
-    if (size(sizes) .eq. 3) then
-
-      !Approximate to 0.
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
-
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1 !Sucess.
-        return
-
-      endif
-
-      !Calculate n_i = log_2(N_i - 1)
-      !Exceptional case: N_i = 1:
-      !Assign an otherwise unachievable negative number and use it
-      !as a flag for nscalar1_integrate_complex. That dimension will
-      !not be integrated over.
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-      if (sizes(2) .eq. 1) then
-        nr2 = -1.0_dp
-        n2 = -1
-      else
-        nr2 = log(real(sizes(2) - 1, dp))/log(2.0_dp)
-        n2 = nint(nr2)
-      endif
-      if (sizes(3) .eq. 1) then
-        nr3 = -1.0_dp
-        n3 = -1
-      else
-        nr3 = log(real(sizes(3) - 1, dp))/log(2.0_dp)
-        n3 = nint(nr3)
-      endif
-
-      !Check if the mesh is suitable for extrapolation.
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n3, dp) - nr3) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
-                                  (int_bounds(4) - int_bounds(3))* &
-                                  (int_bounds(6) - int_bounds(5))) &
-                   /size(array(:, i))
-        enddo
-        !Not suitable, returning the rectangle method approximation.
-        return
-
-      else
-
-        allocate (e3(sizes(1), sizes(2), sizes(3), size(array(1, :))))
-        !For each vector component:
-        do i = 1, size(array(1, :))
-          !i) pass from memory to array layout,
-          call expand_rarray3(array(:, i), e3(:, :, :, i), ep)
-          !ii) integrate as if the data was scattered from [0, 1]x[0, 1]x[0, 1],
-          result(i) = nscalar3_integrate_real(e3(:, :, :, i), n1, n2, n3)
-        enddo
-        deallocate (e3)
-        !iii) multiply by integral bounds so the integral is properly normalized.
-        result = result*((int_bounds(2) - int_bounds(1))* &
-                         (int_bounds(4) - int_bounds(3))* &
-                         (int_bounds(6) - int_bounds(5)))
-        info = 1 !Sucess.
-
-      endif
-
-    elseif (size(sizes) .eq. 2) then
-
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
-
-        result = 0.0_dp
-        info = 1
-        return
-
-      endif
-
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-      if (sizes(2) .eq. 1) then
-        nr2 = -1.0_dp
-        n2 = -1
-      else
-        nr2 = log(real(sizes(2) - 1, dp))/log(2.0_dp)
-        n2 = nint(nr2)
-      endif
-
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
-                                  (int_bounds(4) - int_bounds(3))) &
-                   /size(array(:, i))
-        enddo
-        !Not suitable, returning the rectangle method approximation.
-        return
-
-      else
-
-        allocate (e2(sizes(1), sizes(2), size(array(1, :))))
-        do i = 1, size(array(1, :))
-          call expand_rarray2(array(:, i), e2(:, :, i), ep)
-          result(i) = nscalar2_integrate_real(e2(:, :, i), n1, n2)
-        enddo
-        deallocate (e2)
-        result = result*((int_bounds(2) - int_bounds(1))* &
-                         (int_bounds(4) - int_bounds(3)))
-        info = 1
-
-      endif
-
-    elseif (size(sizes) .eq. 1) then
-
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
-
-        result = 0.0_dp
-        info = 1
-        return
-
-      endif
-
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))) &
-                   /size(array(:, i))
-        enddo
-        !Not suitable, returning the rectangle method approximation.
-        return
-
-      else
-
-        do i = 1, size(array(1, :))
-          result(i) = nscalar1_integrate_real(array(:, i), n1)
-        enddo
-        result = result*((int_bounds(2) - int_bounds(1)))
-        info = 1
-
-      endif
-
-    else
-
-      info = -1
-      return
-
-    endif
+    do i = 1, size(array(1, :))
+      call scalar_integral_extrapolation_real(array(:, i), sizes, int_bounds, result(i), info)
+    enddo
 
   end subroutine vector_integral_extrapolation_real
 
@@ -483,15 +313,15 @@ contains
     if (size(sizes) .eq. 3) then
 
       !Approximate to 0.
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
 
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1 !Sucess.
-        return
+      !  result = cmplx(0.0_dp, 0.0_dp, dp)
+      !  info = 1 !Sucess.
+      !  return
 
-      endif
+      !endif
 
       !Calculate n_i = log_2(N_i - 1)
       !Exceptional case: N_i = 1:
@@ -536,7 +366,7 @@ contains
       else
 
         allocate (e3(sizes(1), sizes(2), sizes(3)))
-        !i) Pass from memory to array layout,
+        !i) Pass from memory to arbitrary array,
         call expand_carray3(array(:), e3(:, :, :), ep)
         !ii) integrate as if the data was scattered from [0, 1]x[0, 1]x[0, 1],
         result = nscalar3_integrate_complex(e3(:, :, :), n1, n2, n3)
@@ -551,14 +381,14 @@ contains
 
     elseif (size(sizes) .eq. 2) then
 
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
 
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1
-        return
+      !  result = cmplx(0.0_dp, 0.0_dp, dp)
+      !  info = 1
+      !  return
 
-      endif
+      !endif
 
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
@@ -599,13 +429,13 @@ contains
 
     elseif (size(sizes) .eq. 1) then
 
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
 
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1
-        return
+      !  result = cmplx(0.0_dp, 0.0_dp, dp)
+      !  info = 1
+      !  return
 
-      endif
+      !endif
 
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
@@ -643,15 +473,12 @@ contains
   subroutine vector_integral_extrapolation_complex(array, sizes, int_bounds, result, info)
 
     complex(kind=dp), intent(in)  :: array(:, :), int_bounds(:)
-    integer, intent(in)  :: sizes(:)
+    integer, intent(in)           :: sizes(:)
 
     complex(kind=dp), intent(out) :: result(size(array(1, :)))
-    integer, intent(out) :: info
+    integer, intent(out)          :: info
 
-    integer                       :: n1, n2, n3, i, ep
-    real(kind=dp)                 :: nr1, nr2, nr3
-    complex(kind=dp), allocatable :: e3(:, :, :, :), &
-                                     e2(:, :, :)
+    integer                       :: i
 
     result = cmplx(0.0_dp, 0.0_dp, dp)
 
@@ -665,175 +492,9 @@ contains
       return
     endif
 
-    if (size(sizes) .eq. 3) then
-
-      !Approximate to 0.
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
-
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1 !Sucess.
-        return
-
-      endif
-
-      !Calculate n_i = log_2(N_i - 1)
-      !Exceptional case: N_i = 1:
-      !Assign an otherwise unachievable negative number and use it
-      !as a flag for nscalar1_integrate_complex. That dimension will
-      !not be integrated over.
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-      if (sizes(2) .eq. 1) then
-        nr2 = -1.0_dp
-        n2 = -1
-      else
-        nr2 = log(real(sizes(2) - 1, dp))/log(2.0_dp)
-        n2 = nint(nr2)
-      endif
-      if (sizes(3) .eq. 1) then
-        nr3 = -1.0_dp
-        n3 = -1
-      else
-        nr3 = log(real(sizes(3) - 1, dp))/log(2.0_dp)
-        n3 = nint(nr3)
-      endif
-
-      !Check if the mesh is suitable for extrapolation.
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n3, dp) - nr3) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
-                                  (int_bounds(4) - int_bounds(3))* &
-                                  (int_bounds(6) - int_bounds(5))) &
-                   /size(array(:, i))
-        enddo
-        !Not suitable, returning the rectangle method approximation.
-
-        return
-
-      else
-
-        allocate (e3(sizes(1), sizes(2), sizes(3), size(array(1, :))))
-        !For each vector component:
-        do i = 1, size(array(1, :))
-          !i) pass from memory to array layout,
-          call expand_carray3(array(:, i), e3(:, :, :, i), ep)
-          !ii) integrate as if the data was scattered from [0, 1]x[0, 1]x[0, 1],
-          result(i) = nscalar3_integrate_complex(e3(:, :, :, i), n1, n2, n3)
-        enddo
-        deallocate (e3)
-        !iii) multiply by integral bounds so the integral is properly normalized.
-        result = result*((int_bounds(2) - int_bounds(1))* &
-                         (int_bounds(4) - int_bounds(3))* &
-                         (int_bounds(6) - int_bounds(5)))
-        info = 1 !Sucess.
-
-      endif
-
-    elseif (size(sizes) .eq. 2) then
-
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
-
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1
-        return
-
-      endif
-
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-      if (sizes(2) .eq. 1) then
-        nr2 = -1.0_dp
-        n2 = -1
-      else
-        nr2 = log(real(sizes(2) - 1, dp))/log(2.0_dp)
-        n2 = nint(nr2)
-      endif
-
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
-                                  (int_bounds(4) - int_bounds(3))) &
-                   /size(array(:, i))
-        enddo
-        return
-
-      else
-
-        allocate (e2(sizes(1), sizes(2), size(array(1, :))))
-        do i = 1, size(array(1, :))
-          call expand_carray2(array(:, i), e2(:, :, i), ep)
-          result(i) = nscalar2_integrate_complex(e2(:, :, i), n1, n2)
-        enddo
-        deallocate (e2)
-        result = result*((int_bounds(2) - int_bounds(1))* &
-                         (int_bounds(4) - int_bounds(3)))
-        info = 1
-
-      endif
-
-    elseif (size(sizes) .eq. 1) then
-
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
-
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1
-        return
-
-      endif
-
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))) &
-                   /size(array(:, i))
-        enddo
-        return
-
-      else
-
-        do i = 1, size(array(1, :))
-          result(i) = nscalar1_integrate_complex(array(:, i), n1)
-        enddo
-        result = result*((int_bounds(2) - int_bounds(1)))
-        info = 1
-
-      endif
-
-    else
-
-      info = -1
-      return
-
-    endif
+    do i = 1, size(array(1, :))
+      call scalar_integral_extrapolation_complex(array(:, i), sizes, int_bounds, result(i), info)
+    enddo
 
   end subroutine vector_integral_extrapolation_complex
 
@@ -866,15 +527,15 @@ contains
     if (size(sizes) .eq. 3) then
 
       !Approximate to 0.
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
 
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1 !Sucess.
-        return
+      !  result = cmplx(0.0_dp, 0.0_dp, dp)
+      !  info = 1 !Sucess.
+      !  return
 
-      endif
+      !endif
 
       !Calculate n_i = log_2(N_i - 1)
       !Exceptional case: N_i = 1:
@@ -919,7 +580,7 @@ contains
       else
 
         allocate (e3(sizes(1), sizes(2), sizes(3)))
-        !i) Pass from memory to array layout,
+        !i) Pass from memory to arbitrary array,
         call expand_carray3(array(:), e3(:, :, :), ep)
         !ii) integrate as if the data was scattered from [0, 1]x[0, 1]x[0, 1],
         result = nscalar3_integrate_complex(e3(:, :, :), n1, n2, n3)
@@ -934,14 +595,14 @@ contains
 
     elseif (size(sizes) .eq. 2) then
 
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
+      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
 
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1
-        return
+      !  result = cmplx(0.0_dp, 0.0_dp, dp)
+      !  info = 1
+      !  return
 
-      endif
+      !endif
 
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
@@ -981,13 +642,13 @@ contains
 
     elseif (size(sizes) .eq. 1) then
 
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
+      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
 
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1
-        return
+      !  result = cmplx(0.0_dp, 0.0_dp, dp)
+      !  info = 1
+      !  return
 
-      endif
+      !endif
 
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
@@ -1024,16 +685,13 @@ contains
   subroutine vector_integral_extrapolation_complex_array_real_bounds(array, sizes, int_bounds, result, info)
 
     complex(kind=dp), intent(in)  :: array(:, :)
-    real(kind=dp), intent(in)  :: int_bounds(:)
-    integer, intent(in)  :: sizes(:)
+    real(kind=dp), intent(in)     :: int_bounds(:)
+    integer, intent(in)           :: sizes(:)
 
     complex(kind=dp), intent(out) :: result(size(array(1, :)))
-    integer, intent(out) :: info
+    integer, intent(out)          :: info
 
-    integer                       :: n1, n2, n3, i, ep
-    real(kind=dp)                 :: nr1, nr2, nr3
-    complex(kind=dp), allocatable :: e3(:, :, :, :), &
-                                     e2(:, :, :)
+    integer                       :: i
 
     result = cmplx(0.0_dp, 0.0_dp, dp)
 
@@ -1047,182 +705,15 @@ contains
       return
     endif
 
-    if (size(sizes) .eq. 3) then
-
-      !Approximate to 0.
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
-
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1 !Sucess.
-        return
-
-      endif
-
-      !Calculate n_i = log_2(N_i - 1)
-      !Exceptional case: N_i = 1:
-      !Assign an otherwise unachievable negative number and use it
-      !as a flag for nscalar1_integrate_complex. That dimension will
-      !not be integrated over.
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-      if (sizes(2) .eq. 1) then
-        nr2 = -1.0_dp
-        n2 = -1
-      else
-        nr2 = log(real(sizes(2) - 1, dp))/log(2.0_dp)
-        n2 = nint(nr2)
-      endif
-      if (sizes(3) .eq. 1) then
-        nr3 = -1.0_dp
-        n3 = -1
-      else
-        nr3 = log(real(sizes(3) - 1, dp))/log(2.0_dp)
-        n3 = nint(nr3)
-      endif
-
-      !Check if the mesh is suitable for extrapolation.
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n3, dp) - nr3) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
-                                  (int_bounds(4) - int_bounds(3))* &
-                                  (int_bounds(6) - int_bounds(5))) &
-                   /size(array(:, i))
-        enddo
-        !Not suitable, returning the rectangle method approximation.
-        return
-
-      else
-
-        allocate (e3(sizes(1), sizes(2), sizes(3), size(array(1, :))))
-        !For each vector component:
-        do i = 1, size(array(1, :))
-          !i) pass from memory to array layout,
-          call expand_carray3(array(:, i), e3(:, :, :, i), ep)
-          !ii) integrate as if the data was scattered from [0, 1]x[0, 1]x[0, 1],
-          result(i) = nscalar3_integrate_complex(e3(:, :, :, i), n1, n2, n3)
-        enddo
-        deallocate (e3)
-        !iii) multiply by integral bounds so the integral is properly normalized.
-        result = result*((int_bounds(2) - int_bounds(1))* &
-                         (int_bounds(4) - int_bounds(3))* &
-                         (int_bounds(6) - int_bounds(5)))
-        info = 1 !Sucess.
-
-      endif
-
-    elseif (size(sizes) .eq. 2) then
-
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-          (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
-
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1
-        return
-
-      endif
-
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-      if (sizes(2) .eq. 1) then
-        nr2 = -1.0_dp
-        n2 = -1
-      else
-        nr2 = log(real(sizes(2) - 1, dp))/log(2.0_dp)
-        n2 = nint(nr2)
-      endif
-
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp) .or. &
-          (abs(real(n2, dp) - nr2) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))* &
-                                  (int_bounds(4) - int_bounds(3))) &
-                   /size(array(:, i))
-        enddo
-        !Not suitable, returning the rectangle method approximation.
-        return
-
-      else
-
-        allocate (e2(sizes(1), sizes(2), size(array(1, :))))
-        do i = 1, size(array(1, :))
-          call expand_carray2(array(:, i), e2(:, :, i), ep)
-          result(i) = nscalar2_integrate_complex(e2(:, :, i), n1, n2)
-        enddo
-        deallocate (e2)
-        result = result*((int_bounds(2) - int_bounds(1))* &
-                         (int_bounds(4) - int_bounds(3)))
-        info = 1
-
-      endif
-
-    elseif (size(sizes) .eq. 1) then
-
-      if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
-
-        result = cmplx(0.0_dp, 0.0_dp, dp)
-        info = 1
-        return
-
-      endif
-
-      if (sizes(1) .eq. 1) then
-        nr1 = -1.0_dp
-        n1 = -1
-      else
-        nr1 = log(real(sizes(1) - 1, dp))/log(2.0_dp)
-        n1 = nint(nr1)
-      endif
-
-      if ((abs(real(n1, dp) - nr1) .ge. 1.0E-6_dp)) then
-
-        info = 0
-        do i = 1, size(array(1, :))
-          result = sum(array, 1)*((int_bounds(2) - int_bounds(1))) &
-                   /size(array(:, i))
-        enddo
-        !Not suitable, returning the rectangle method approximation.
-        return
-
-      else
-
-        do i = 1, size(array(1, :))
-          result(i) = nscalar1_integrate_complex(array(:, i), n1)
-        enddo
-        result = result*((int_bounds(2) - int_bounds(1)))
-        info = 1
-
-      endif
-
-    else
-
-      info = -1
-      return
-
-    endif
+    do i = 1, size(array(1, :))
+      call scalar_integral_extrapolation_complex_array_real_bounds(array(:, i), sizes, int_bounds, result(i), info)
+    enddo
 
   end subroutine vector_integral_extrapolation_complex_array_real_bounds
 
   function nscalar3_integrate_real(array, n1, n2, n3) result(u)
 
-    !V1.0. Utility to integrate a real f(x) (R^3->R) function over the
+    !Utility to integrate a real f(x) (R^3->R) function over the
     ![0, 1]x[0, 1]x[0, 1] real interval using the extrapolation method.
     !The data is stored in the input array
     !such that array(i, j, k) = f(x_i, y_j, z_k), x_i = (i-1)/(2^n1), i \in [1, 2^n1 + 1],
@@ -1249,7 +740,7 @@ contains
 
   function nscalar2_integrate_real(array, n1, n2) result(u)
 
-    !V1.0. Utility to integrate a real f(x) (R^2->R) function over the
+    !Utility to integrate a real f(x) (R^2->R) function over the
     ![0, 1]x[0, 1] real interval using the extrapolation method.
     !The data is stored in the input array
     !such that array(i, j) = f(x_i, y_j), x_i = (i-1)/(2^n1), i \in [1, 2^n1 + 1],
@@ -1274,7 +765,7 @@ contains
 
   function nscalar1_integrate_real(array, n) result(u)
 
-    !V1.0. Utility to integrate a real f(x) (R->R) function over the
+    !Utility to integrate a real f(x) (R->R) function over the
     ![0, 1] real interval using the extrapolation method.
     !The data is stored in the input array
     !such that array(i) = f(x_i), x_i = (i-1)/(2^n), i \in [1, 2^n + 1].
@@ -1303,7 +794,7 @@ contains
 
     function extrapolation(array, n) result(u)
 
-      !V1.0. Implementation of the extrapolation scheme.
+      !Implementation of the extrapolation scheme.
       !Calculates trapezium rule approximation for the data array and different
       !values of the step. Practical order is assumed in the data array.
       !The integer n is the "order" of the data. Relates the quantity of data points
@@ -1335,7 +826,7 @@ contains
 
     function trapezium_method(array) result(u)
 
-      !V1.0. Implementation of the composite trapezium method.
+      !Implementation of the composite trapezium method.
       !Assigns a weight of 0.5 to the endpoints and a weight of 1
       !to internal points. Later divides by the number of steps.
       !Data from array is assumed to be in the [0, 1] interval equally spaced
@@ -1356,7 +847,7 @@ contains
 
     function organize_data(array, n) result(org_array)
 
-      !V1.0. Implementation of the practical ordering map.
+      !Implementation of the practical ordering map.
       !Passes data array form being canonically ordered to practically ordered.
       !The integer n is the "order" of the data. Relates the quantity of data points
       !by: size(array) = 1 + 2^n.
@@ -1387,7 +878,7 @@ contains
 
   function nscalar3_integrate_complex(array, n1, n2, n3) result(u)
 
-    !V1.0. Utility to integrate a complex f(x) (R^3->R) function over the
+    !Utility to integrate a complex f(x) (R^3->R) function over the
     ![0, 1]x[0, 1]x[0, 1] real interval using the extrapolation method.
     !The data is stored in the input array
     !such that array(i, j, k) = f(x_i, y_j, z_k), x_i = (i-1)/(2^n1), i \in [1, 2^n1 + 1],
@@ -1414,7 +905,7 @@ contains
 
   function nscalar2_integrate_complex(array, n1, n2) result(u)
 
-    !V1.0. Utility to integrate a complex f(x) (R^2->C) function over the
+    !Utility to integrate a complex f(x) (R^2->C) function over the
     ![0, 1]x[0, 1] real interval using the extrapolation method.
     !The data is stored in the input array
     !such that array(i, j) = f(x_i, y_j), x_i = (i-1)/(2^n1), i \in [1, 2^n1 + 1],
@@ -1439,7 +930,7 @@ contains
 
   function nscalar1_integrate_complex(array, n) result(u)
 
-    !V1.0. Utility to integrate a complex f(x) (R->C) function over the
+    !Utility to integrate a complex f(x) (R->C) function over the
     ![0, 1] real interval using the extrapolation method.
     !The data is stored in the input array
     !such that array(i) = f(x_i), x_i = (i-1)/(2^n), i \in [1, 2^n + 1].
@@ -1468,7 +959,7 @@ contains
 
     function extrapolation(array, n) result(u)
 
-      !V1.0. Implementation of the extrapolation scheme.
+      !Implementation of the extrapolation scheme.
       !Calculates trapezium rule approximation for the data array and different
       !values of the step. Practical order is assumed in the data array.
       !The integer n is the "order" of the data. Relates the quantity of data points
@@ -1500,7 +991,7 @@ contains
 
     function trapezium_method(array) result(u)
 
-      !V1.0. Implementation of the composite trapezium method.
+      !Implementation of the composite trapezium method.
       !Assigns a weight of 0.5 to the endpoints and a weight of 1
       !to internal points. Later divides by the number of steps.
       !Data from array is assumed to be in the [0, 1] interval equally spaced
@@ -1521,7 +1012,7 @@ contains
 
     function organize_data(array, n) result(org_array)
 
-      !V1.0. Implementation of the practical ordering map.
+      !Implementation of the practical ordering map.
       !Passes data array form being canonically ordered to practically ordered.
       !The integer n is the "order" of the data. Relates the quantity of data points
       !by: size(array) = 1 + 2^n.
@@ -1552,7 +1043,7 @@ contains
 
   subroutine shrink_rarray1(array, shrink, info)
 
-    !Pass from dim = 1 array layout to memory layout.
+    !Pass from dim = 1 arbitrary array to memory layout.
 
     real(kind=dp), intent(in)  :: array(:)
 
@@ -1581,7 +1072,7 @@ contains
 
   subroutine shrink_rarray2(array, shrink, info)
 
-    !Pass from dim = 2 array layout to memory layout.
+    !Pass from dim = 2 arbitrary array to memory layout.
 
     real(kind=dp), intent(in)  :: array(:, :)
 
@@ -1612,7 +1103,7 @@ contains
 
   subroutine shrink_rarray3(array, shrink, info)
 
-    !Pass from dim = 3 array layout to memory layout.
+    !Pass from dim = 3 arbitrary array to memory layout.
 
     real(kind=dp), intent(in)  :: array(:, :, :)
 
@@ -1645,7 +1136,7 @@ contains
 
   subroutine shrink_rarray4(array, shrink, info)
 
-    !Pass from dim = 4 array layout to memory layout.
+    !Pass from dim = 4 arbitrary array to memory layout.
 
     real(kind=dp), intent(in)  :: array(:, :, :, :)
 
@@ -1680,7 +1171,7 @@ contains
 
   subroutine shrink_carray1(array, shrink, info)
 
-    !Pass from dim = 1 array layout to memory layout.
+    !Pass from dim = 1 arbitrary array to memory layout.
 
     complex(kind=dp), intent(in)  :: array(:)
 
@@ -1709,7 +1200,7 @@ contains
 
   subroutine shrink_carray2(array, shrink, info)
 
-    !Pass from dim = 2 array layout to memory layout.
+    !Pass from dim = 2 arbitrary array to memory layout.
 
     complex(kind=dp), intent(in)  :: array(:, :)
 
@@ -1740,7 +1231,7 @@ contains
 
   subroutine shrink_carray3(array, shrink, info)
 
-    !Pass from dim = 3 array layout to memory layout.
+    !Pass from dim = 3 arbitrary array to memory layout.
 
     complex(kind=dp), intent(in)  :: array(:, :, :)
 
@@ -1773,7 +1264,7 @@ contains
 
   subroutine shrink_carray4(array, shrink, info)
 
-    !Pass from dim = 4 array layout to memory layout.
+    !Pass from dim = 4 arbitrary array to memory layout.
 
     complex(kind=dp), intent(in)  :: array(:, :, :, :)
 
@@ -1808,7 +1299,7 @@ contains
 
   subroutine expand_rarray1(array, expand, info)
 
-    !Pass from memory layout to dim = 1 array layout.
+    !Pass from memory layout to dim = 1 arbitrary array.
 
     real(kind=dp), intent(in)  :: array(:)
 
@@ -1837,7 +1328,7 @@ contains
 
   subroutine expand_rarray2(array, expand, info)
 
-    !Pass from memory layout to dim = 2 array layout.
+    !Pass from memory layout to dim = 2 arbitrary array.
 
     real(kind=dp), intent(in)  :: array(:)
 
@@ -1868,7 +1359,7 @@ contains
 
   subroutine expand_rarray3(array, expand, info)
 
-    !Pass from memory layout to dim = 3 array layout.
+    !Pass from memory layout to dim = 3 arbitrary array.
 
     real(kind=dp), intent(in)  :: array(:)
 
@@ -1901,7 +1392,7 @@ contains
 
   subroutine expand_rarray4(array, expand, info)
 
-    !Pass from memory layout to dim = 4 array layout.
+    !Pass from memory layout to dim = 4 arbitrary array.
 
     real(kind=dp), intent(in)  :: array(:)
 
@@ -1936,7 +1427,7 @@ contains
 
   subroutine expand_carray1(array, expand, info)
 
-    !Pass from memory layout to dim = 1 array layout.
+    !Pass from memory layout to dim = 1 arbitrary array.
 
     complex(kind=dp), intent(in)  :: array(:)
 
@@ -1965,7 +1456,7 @@ contains
 
   subroutine expand_carray2(array, expand, info)
 
-    !Pass from memory layout to dim = 2 array layout.
+    !Pass from memory layout to dim = 2 arbitrary array.
 
     complex(kind=dp), intent(in)  ::  array(:)
 
@@ -1996,7 +1487,7 @@ contains
 
   subroutine expand_carray3(array, expand, info)
 
-    !Pass from memory layout to dim = 3 array layout.
+    !Pass from memory layout to dim = 3 arbitrary array.
 
     complex(kind=dp), intent(in)  :: array(:)
 
@@ -2029,7 +1520,7 @@ contains
 
   subroutine expand_carray4(array, expand, info)
 
-    !Pass from memory layout to dim = 4 array layout.
+    !Pass from memory layout to dim = 4 arbitrary array.
 
     complex(kind=dp), intent(in)  :: array(:)
 

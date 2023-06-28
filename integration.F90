@@ -783,7 +783,7 @@ contains
       u = sum(array)*0.5_dp
     else if (n .eq. -1) then
       !Exception size(array) = 1, do not integrate.
-      u = 1.0_dp!array(1)
+      u = array(1)
     else
       !size(array) = 3, 5, 9, ... proceed normally.
       ord_array = organize_data(array, n)
@@ -948,7 +948,7 @@ contains
       u = sum(array)*0.5_dp
     else if (n .eq. -1) then
       !Exception size(array) = 1, do not integrate.
-      u = cmplx(0.0_dp, 0.0_dp, dp)!array(1)
+      u = array(1)
     else
       !size(array) = 3, 5, 9, ... proceed normally.
       ord_array = organize_data(array, n)

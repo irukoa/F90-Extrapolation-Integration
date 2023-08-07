@@ -1,6 +1,6 @@
 module extrapolation_integration
 
-  !V1.0.1 By Álvaro R. Puente-Uriona for use un the SsTC package.
+  !V1.0.1 By Álvaro R. Puente-Uriona.
 
   !Standalone module to compute integrals using the extrapolation
   !a.k.a. Romberg method.

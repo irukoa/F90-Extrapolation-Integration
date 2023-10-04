@@ -1,0 +1,33 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: F90-Extrapolation-Integration
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Álvaro
+    family-names: R. Puente-Uriona
+    email: alvaro.ruiz@ehu.eus
+    affiliation: UPV/EHU
+    orcid: 'https://orcid.org/0000-0003-1915-8804'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.8406279
+repository-code: >-
+  https://github.com/irukoa/F90-Extrapolation-Integration/tree/master
+url: >-
+  https://github.com/irukoa/F90-Extrapolation-Integration/tree/master
+abstract: >-
+  Project to implement the extrapolation method on 1-, 2-
+  and 3-dimensional scalar or vector integrals.
+keywords:
+  - Integration-methods
+  - Fortran
+  - Extrapolation-methods
+license: GPL-3.0
+commit: e8adf9c
+version: v1.0.1
+date-released: '2023-10-04'
